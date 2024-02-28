@@ -1,0 +1,11 @@
+---
+  collector:
+    debug: false
+    sample_data: false
+    sample_data_path: /sample-data
+  oneview: # credentials with permissions to read from OneView
+    domain: pdxfixit.com
+    hosts:
+      - https://synergy.pdxfixit.com
+    pass: password
+    user: username

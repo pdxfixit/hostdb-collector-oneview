@@ -1,0 +1,8 @@
+# hostdb-collector-oneview binary
+/hostdb-collector-oneview
+
+# environment variables file used during `docker run`
+/env.list
+
+# sample data folder
+/sample-data

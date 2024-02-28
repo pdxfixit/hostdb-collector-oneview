@@ -1,0 +1,67 @@
+version: 2
+
+jobs:
+
+  build:
+    docker:
+      - image: circleci/golang:1.17
+    working_directory: /go/src/github.com/pdxfixit/hostdb-collector-oneview
+    steps:
+      - checkout
+      - run:
+          command: |
+            go install github.com/kisielk/errcheck@latest
+            go install github.com/mitchellh/gox@latest
+            go install golang.org/x/lint/golint@latest
+          name: Install build dependencies
+      - restore_cache:
+          keys:
+            - go-mod-v1-{{ checksum "go.sum" }}
+      - run:
+          name: Get golang module dependencies
+          command: make get
+      - run:
+          name: Run tests
+          command: make test
+      - run:
+          name: Compile binary executable
+          command: make compile
+      - save_cache:
+          key: go-mod-v1-{{ checksum "go.sum" }}
+          paths:
+            - "/go/pkg/mod"
+      - persist_to_workspace:
+          root: .
+          paths:
+            - hostdb-collector-oneview
+
+  containerize:
+    docker:
+      - image: docker:git
+    working_directory: /go/src/github.com/pdxfixit/hostdb-collector-oneview
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - setup_remote_docker
+      - run:
+          name: Install dependencies
+          command: apk add --upgrade --no-cache curl jq make
+      - run:
+          name: Build container image
+          command: make build
+      - deploy:
+          name: Push container image to registry
+          command: make push
+
+workflows:
+  version: 2
+  commit:
+    jobs:
+      - build
+      - containerize:
+          filters:
+            branches:
+              only: master
+          requires:
+            - build
